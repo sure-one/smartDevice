@@ -1,4 +1,4 @@
-package com.smart.platform;
+package com.smart.platform.ui;
 
 import javax.servlet.annotation.WebServlet;
 
