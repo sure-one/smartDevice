@@ -84,13 +84,13 @@ public class AppTest{
         }
 	}
 	
-	public String receiveCommand(String command){
+	public void receiveCommand(String command){
 		switch (command){
-		case "菜单": getMenu();
-		case "开机": startup();
-		case "关机": shutdown();
-		case "加热": heat();
-		default: return "对不起，没有找到相应指令！";
+		case "菜单": getMenu();break;
+		case "开机": startup();break;
+		case "关机": shutdown();break;
+		case "加热": heat();break;
+		default: sendMessage("对不起，没有找到相应指令！");
 		}
 	}
 	
