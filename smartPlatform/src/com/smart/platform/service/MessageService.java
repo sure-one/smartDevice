@@ -4,6 +4,7 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
@@ -64,6 +65,25 @@ public class MessageService {
 	        	
 	        });
 		} catch (Exception e) {
+			logger.logSevereException(e);
+		}
+	}
+	
+	public MqttClient getInclient(){
+		return inClient;
+	}
+	
+	public void setInclientCallback(MqttCallback callback){
+		inClient.setCallback(callback);
+	}
+	
+	public void reconnectInclient(){
+		logger.info("Connection lost, reconnecting...");
+		try {
+			inClient.connect(connOpts);
+			logger.info("Reconnected!");
+		} catch (Exception e) {
+			logger.severe("Failed to connect Apollo!");
 			logger.logSevereException(e);
 		}
 	}
