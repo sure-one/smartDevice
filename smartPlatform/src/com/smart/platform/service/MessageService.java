@@ -4,7 +4,6 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
@@ -14,25 +13,36 @@ import com.sun.istack.internal.logging.Logger;
 
 public class MessageService {
 	private static Logger logger = Logger.getLogger(MessageService.class);
-	private static MqttClient client;
+	private static MqttClient inClient;
+	private static MqttClient outClient;
 	private static MqttConnectOptions connOpts;
+	private final String inTopic;
+	private final String outTopic;
 	
-	public MessageService(MqttConfig config){
-		logger.info("启动MessageService");
+	public MessageService(String sendTopic, String receiveTopic){
+		logger.info("Start up MessageService");
+		inTopic = receiveTopic;
+		outTopic = sendTopic;
 		try {
-			client = new MqttClient(config.url, config.clientId, new MemoryPersistence());
+			inClient = new MqttClient(MqttConfig.url, MqttConfig.clientId+"_in", new MemoryPersistence());
+			outClient = new MqttClient(MqttConfig.url, MqttConfig.clientId, new MemoryPersistence());
 	        connOpts = new MqttConnectOptions();
 	        connOpts.setCleanSession(false);
-	        connOpts.setUserName(config.userName);  
-	        connOpts.setPassword(config.passWord.toCharArray());  
-	        client.connect(connOpts);
-	        client.setCallback(new MqttCallback(){
+	        connOpts.setUserName(MqttConfig.userName);  
+	        connOpts.setPassword(MqttConfig.passWord.toCharArray());  
+	        inClient.connect(connOpts);
+	        outClient.connect(connOpts);
+	        logger.info("连接成功");
+	        inClient.subscribe(inTopic);
+	        inClient.setCallback(new MqttCallback(){
 
 				@Override
 				public void connectionLost(Throwable arg0) {
+					logger.info("Connection lost, reconnecting...");
 					try {
-						client.connect(connOpts);
-					} catch (MqttException e) {
+						inClient.connect(connOpts);
+						logger.info("Reconnected!");
+					} catch (Exception e) {
 						logger.severe("Failed to connect Apollo!");
 						logger.logSevereException(e);
 					}
@@ -40,20 +50,33 @@ public class MessageService {
 
 				@Override
 				public void deliveryComplete(IMqttDeliveryToken token) {
-					logger.fine("DeliveryComplete---------"  + token.isComplete());
+					String status = token.isComplete()?"成功":"失败";
+					logger.info("发送成功");
+//					layout.addComponent(new Label("发送"+status));
 				}
 
 				@Override
-				public void messageArrived(String arg0, MqttMessage arg1)
+				public void messageArrived(String topic, MqttMessage message)
 						throws Exception {
-					// TODO Auto-generated method stub
-					
+					logger.info("收到消息:"+message.toString());
+//					layout.addComponent(new Label(message.toString()));
 				}
 	        	
 	        });
-		} catch (MqttException e) {
+		} catch (Exception e) {
 			logger.logSevereException(e);
 		}
 	}
 	
+	public void sendMessage(String message){
+		MqttMessage m = new MqttMessage(message.getBytes());
+		m.setQos(2);
+		m.setRetained(false);
+		try {
+			outClient.publish(outTopic, m);
+		} catch (Exception e) {
+			logger.severe("Failed to send message: "+message);
+			e.printStackTrace();
+		}
+	}
 }
