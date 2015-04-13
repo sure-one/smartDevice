@@ -18,6 +18,8 @@ import com.vaadin.server.VaadinServlet;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.Table;
@@ -42,42 +44,54 @@ public class SmartplatformUI extends UI implements MqttCallback{
 	
 	VerticalLayout layout;
 //	VerticalLayout panel;
-	Table table;
+	Table contactTable = new Table();
+	Table messageTable = new Table();
+	final TextField searchField = new TextField();
+	Button sendButton = new Button("发送");
 	@Override
 	protected void init(VaadinRequest request) {
 		service.setInclientCallback(this);
-		layout = new VerticalLayout();
-		layout.setMargin(true);
-		layout.setSizeFull();
-		setContent(layout);
 
-		table = new Table();
-		table.addContainerProperty("Name", String.class, null);
-		table.addContainerProperty("Mag", String.class, null);
-		table.setPageLength(table.size());
-		table.setHeight("300px");
-//		panel = new VerticalLayout();
-//		panel.setMargin(false);
-//		panel.setSizeFull();;
-//		panel.setSpacing(false);
-		final TextField tf = new TextField("Send your message");
-		Button button = new Button("Send");
-		button.addClickListener(new Button.ClickListener() {
+		
+		searchField.setInputPrompt("Input your message");
+		sendButton.addClickListener(new Button.ClickListener() {
 			public void buttonClick(ClickEvent event) {
-				service.sendMessage(tf.getValue());
-//				panel.addComponent(new Label(tf.getValue()),i++);
-//				Object newItemId = table.addItem();
-//				Item row1 = table.getItem(newItemId);
-//				row1.getItemProperty("Name").setValue("App10086");
-//				row1.getItemProperty("Mag").setValue(tf.getValue());
-				table.addItem(new Object[]{"My", tf.getValue()}, ++i);
-				
+				service.sendMessage(searchField.getValue());
+				messageTable.addItem(new Object[]{"","",searchField.getValue(),"My"}, ++i);
 			}
 		});
-		layout.addComponent(table);
-		layout.addComponent(tf);
-		layout.addComponent(button);
-//		final MessageService service = new MessageService("sample", layout);
+		
+        HorizontalSplitPanel splitPanel = new HorizontalSplitPanel();
+        setContent(splitPanel);
+
+        VerticalLayout leftLayout = new VerticalLayout();
+        splitPanel.addComponent(leftLayout);
+        splitPanel.addComponent(contactTable);
+        leftLayout.addComponent(messageTable);
+        HorizontalLayout bottomLeftLayout = new HorizontalLayout();
+        leftLayout.addComponent(bottomLeftLayout);
+        bottomLeftLayout.addComponent(searchField);
+        bottomLeftLayout.addComponent(sendButton);
+
+
+        leftLayout.setSizeFull();
+        leftLayout.setMargin(true);
+
+        leftLayout.setExpandRatio(messageTable, 1);
+        messageTable.setSizeFull();
+//        messageTable.setStyleName("messageTable");
+
+        bottomLeftLayout.setWidth("100%");
+        searchField.setWidth("100%");
+        bottomLeftLayout.setExpandRatio(searchField, 1);
+
+
+       
+		messageTable.addContainerProperty("Device", String.class, null);
+		messageTable.addContainerProperty("Message1", String.class, null);
+		messageTable.addContainerProperty("Message2", String.class, null);
+		messageTable.addContainerProperty("Me", String.class, null);
+		messageTable.setPageLength(messageTable.size());
 	}
 	
 	class FeederThread extends Thread {
@@ -109,7 +123,7 @@ public class SmartplatformUI extends UI implements MqttCallback{
 	public void messageArrived(String topic, MqttMessage response) throws Exception {
 		logger.info("收到消息:"+response.toString());
 //		this.panel.addComponent(new Label(response.toString()));
-		table.addItem(new Object[]{"App10086", response.toString()}, ++i);
+		messageTable.addItem(new Object[]{"App10086", response.toString(),"",""}, ++i);
 	}
 
 }

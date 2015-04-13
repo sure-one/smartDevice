@@ -7,5 +7,5 @@ public class MqttConfig {
 	public static String url = protocal+"://"+host+":"+port;
 	public static String userName = "admin";  
 	public static String passWord = "password";  
-	public static String clientId = "sample";  
+	public static String clientId = "userA";  
 }
